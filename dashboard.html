@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>FreshSteps AI — Dashboard</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+
+
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #fff;
+      --muted: #6b7280;
+      --brand: #4f46e5;
+    }
+
+    body {
+      font-family: Inter, system-ui, Arial;
+      background: var(--bg);
+      margin: 0
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 20px auto;
+      padding: 16px
+    }
+
+    .hdr {
+      background: linear-gradient(90deg, #4338ca, #6366f1);
+      color: #fff;
+      padding: 20px;
+      border-radius: 12px
+    }
+
+    .hdr h1 {
+      margin: 0;
+      font-weight: 800
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 12px
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 8px 20px rgba(2, 8, 23, .06)
+    }
+
+    .title {
+      font-weight: 800;
+      margin-bottom: 8px
+    }
+
+    .heat-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      color: white
+    }
+
+    .heat-cell {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      color: white !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: #eef2ff;
+      border-radius: 10px;
+      padding: 6px;
+      align-items: center
+    }
+
+    .tab {
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      color: white;
+    }
+
+    .tab.active {
+      background: var(--brand);
+      color: #fff
+    }
+
+    .btn {
+      background: var(--brand);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 0;
+      cursor: pointer
+    }
+
+    #map {
+      height: 360px;
+      border-radius: 10px
+    }
+
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      /* Air-inspired blue shades */
+      top: 0;
+      left: 0;
+      z-index: -1;
+
+
+    }
+
+    .heat-cell {
+      color: white !important;
+      /* Force text color to white */
+
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.12);
+      /* frosted glass effect */
+      backdrop-filter: blur(12px);
+      /* blur background behind the card */
+      -webkit-backdrop-filter: blur(12px);
+      /* Safari support */
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      color: #fff;
+      /* white text for contrast */
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="particles-js"></div>
+  <div class="wrap">
+    <header class="hdr card">
+      <div style="margin-top:6px;color:white;">
+        <h1><span style=" color:#2e88ff; font-family:Lobster;">FreshSteps AI</span> <span style="color:white">— Air
+            Quality Dashboard</span></h1>
+        Hello, <strong>{{ result.fullName }}</strong> • City: <strong>{{ result.city_matched }}</strong>
+      </div>
+    </header>
+
+    <!-- KPI row -->
+    <section class="kpi-grid" style="margin-top:12px">
+      <div class="card ">
+        <div class="title">PM2.5 (Latest)</div>
+        <div style="font-size:28px;font-weight:800">{{ result.pm2_5_latest or "—" }}</div>
+        <div>Avg: {{ result.pm2_5_avg or "—" }}</div>
+      </div>
+      <div class="card">
+        <div class="title">PM10 (Latest)</div>
+        <div style="font-size:28px;font-weight:800">{{ result.pm10_latest or "—" }}</div>
+        <div>Avg: {{ result.pm10_avg or "—" }}</div>
+      </div>
+      <div class="card">
+        <div class="title">CO₂ (Latest)</div>
+        <div style="font-size:28px;font-weight:800">{{ result.co2_latest or "—" }}</div>
+        <div>Avg: {{ result.co2_avg or "—" }}</div>
+      </div>
+      <div class="card">
+        <div class="title">Temperature (AT)</div>
+        <div style="font-size:28px;font-weight:800">{{ result.AT_latest or "—" }} °C</div>
+        <div>Humidity: {{ result.RH_latest or "—" }}%</div>
+      </div>
+    </section>
+
+    <!-- Trends + Exposure -->
+    <section class="grid" style="grid-template-columns:2fr 1fr;margin-top:16px;gap:16px">
+      <div class="card">
+        <div class="title">Pollution Trends (recent)</div>
+        <canvas id="trendChart" height="220"></canvas>
+      </div>
+
+      <div class="card">
+        <div class="title">Exposure Breakdown & Mask</div>
+        <div class="tabs" id="maskTabs">
+          <div class="tab active" data-mask="off">Mask OFF</div>
+          <div class="tab" data-mask="on">Mask ON</div>
+        </div>
+        <canvas id="exposureChart" height="220" style="margin-top:12px"></canvas>
+        <div style="margin-top:10px;color:white">
+          Indoor / Work / Outdoor hours (from form): <strong>{{ result.indoor }} / {{ result.work }} / {{ result.outdoor
+            }}</strong>
+        </div>
+        <div style="margin-top:12px">
+          <a class="btn" href="{{ url_for('products', submission_id=submission_id) }}">Product Recommendations</a>
+          <a class="btn" style="margin-left:8px" href="{{ url_for('routes', submission_id=submission_id) }}">View
+            Routes</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Weekly heatmap + map -->
+    <section class="grid" style="grid-template-columns:2fr 1fr;margin-top:16px;gap:16px">
+      <div class="card">
+        <div class="title">Weekly Averages (last 7 days)</div>
+        <div class="heat-wrap">
+          {% if weekly and weekly|length > 0 %}
+          <div style="min-width:120px">
+            <div style="font-weight:700;margin-bottom:6px">Day</div>
+            {% for w in weekly %}<div style="margin-bottom:6px">{{ w.day }}</div>{% endfor %}
+          </div>
+
+          <div style="min-width:100px">
+            <div style="font-weight:700;margin-bottom:6px;color:#ffffff !important">PM2.5</div>
+            {% for w in weekly %}
+            {% set p = w.PM2_5 or 0 %}
+            {% if p <= 15 %}{% set color="#16a34a" %} {% elif p <=35 %}{% set color="#f59e0b" %} {% elif p <=55 %}{% set
+              color="#ea580c" %} {% else %}{% set color="#dc2626" %}{% endif %} <div class="heat-cell"
+              style="background:{{ color }};margin-bottom:6px;color:#ffffff !important">{{ p }}
+          </div>
+          {% endfor %}
+        </div>
+
+        <div style="min-width:100px">
+          <div style="font-weight:700;margin-bottom:6px;color:#ffffff !important">PM10</div>
+          {% for w in weekly %}
+          {% set p = w.PM10 or 0 %}
+          {% if p <= 50 %}{% set color="#16a34a" %} {% elif p <=100 %}{% set color="#f59e0b" %} {% elif p <=150 %}{% set
+            color="#ea580c" %} {% else %}{% set color="#dc2626" %}{% endif %} <div class="heat-cell"
+            style="background:{{ color }};margin-bottom:6px;color:#ffffff !important">{{ p }}
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="min-width:100px">
+        <div style="font-weight:700;margin-bottom:6px;color:#ffffff !important">CO₂</div>
+        {% for w in weekly %}
+        {% set p = w.CO2 or 0 %}
+        {% if p <= 800 %}{% set color="#16a34a" %} {% elif p <=1200 %}{% set color="#f59e0b" %} {% elif p <=2000 %}{%
+          set color="#ea580c" %} {% else %}{% set color="#dc2626" %}{% endif %} <div class="heat-cell"
+          style="background:{{ color }};margin-bottom:6px;color:#ffffff !important">{{ p }}
+      </div>
+      {% endfor %}
+  </div>
+  {% else %}
+  <div style="color:white">Not enough data to show weekly averages.</div>
+  {% endif %}
+  </div>
+  </div>
+
+  <div class="card">
+    <div class="title">Your Submitted Location</div>
+    <div style="color:white;margin-bottom:8px">From: <strong>{{ result.from_location }}</strong><br>To: <strong>{{
+        result.to_location }}</strong></div>
+    <div id="map"></div>
+  </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="card" style="margin-top:16px">
+    <div class="title">Today vs Yesterday (based on your submissions)</div>
+    <!-- <div>Yesterday PM2.5: <b>{{ yest_pm or "—" }}</b> &nbsp;&nbsp; Today PM2.5: <b>{{ today_pm or "—" }}</b></div>
+      <div style="margin-top:6px">Yesterday CO₂: <b>{{ yest_co2 or "—" }}</b> &nbsp;&nbsp; Today CO₂: <b>{{ today_co2 or "—" }}</b></div>
+       -->
+    <p><b>Yesterday PM2.5:</b> {{ yest_pm if yest_pm is not none else "N/A" }}</p>
+    <p><b>Today PM2.5:</b> {{ today_pm if today_pm is not none else "N/A" }}</p>
+    <p><b>Yesterday CO₂:</b> {{ yest_co2 if yest_co2 is not none else "N/A" }}</p>
+    <p><b>Today CO₂:</b> {{ today_co2 if today_co2 is not none else "N/A" }}</p>
+
+  </section>
+  </div>
+  <script>
+    // Data from servertrendchart
+    const labels = {{ times| tojson }};
+    const pm25 = {{ pm25_ts| tojson }};
+    const pm10 = {{ pm10_ts| tojson }};
+    const co2 = {{ co2_ts| tojson }};
+
+    // Trend chart
+    const tctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(tctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      { label: 'PM2.5', data: pm25, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,.12)', fill: true, tension: .3 },
+      { label: 'PM10', data: pm10, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.12)', fill: true, tension: .3 },
+      { label: 'CO₂', data: co2, borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,.12)', fill: true, tension: .3 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          color: 'white'
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: 'white'
+        },
+        grid: {
+          color: 'rgba(255,255,255,0.2)'
+        }
+      },
+      y: {
+        ticks: {
+          color: 'white'
+        },
+        grid: {
+          color: 'rgba(255,255,255,0.2)'
+        }
+      }
+    }
+  }
+});
+
+    // Exposure pie and mask tabs
+    const exposure = {{ exposure| tojson }};
+    const expoCtx = document.getElementById('exposureChart').getContext('2d');
+
+    function exposureData(maskOn) {
+      const indoor = exposure.indoor || 0;
+      const work = maskOn ? (exposure.work || 0) * 0.5 : (exposure.work || 0);
+      const outdoor = maskOn ? (exposure.outdoor || 0) * 0.5 : (exposure.outdoor || 0);
+      return [indoor, work, outdoor];
+    }
+
+    let maskOn = false;
+    let expoChart = new Chart(expoCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Indoor', 'Work', 'Outdoor'],
+        datasets: [{ data: exposureData(false) }]
+      },
+      options: { responsive: true }
+    });
+
+    const tabs = document.querySelectorAll('#maskTabs .tab');
+    tabs.forEach(t => {
+      t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        maskOn = (t.dataset.mask === 'on');
+        expoChart.data.datasets[0].data = exposureData(maskOn);
+        expoChart.update();
+      });
+    });
+
+    // Map
+    const lat = parseFloat("{{ result.latitude or 0 }}") || 0;
+    const lon = parseFloat("{{ result.longitude or 0 }}") || 0;
+    const map = L.map('map').setView([lat || 28.459, lon || 77.026], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    if (lat && lon) {
+      L.marker([lat, lon]).addTo(map).bindPopup("Submitted location").openPopup();
+    }
+
+    particlesJS("particles-js", {
+      "particles": {
+        "number": {
+          "value": 110,
+          "density": { "enable": true, "value_area": 1000 }
+        },
+        "color": { "value": ["#ffffff", "#87ceeb", "#b3e5fc"] },
+        "shape": {
+          "type": "circle",
+          "stroke": { "width": 0, "color": "#000000" }
+        },
+        "opacity": {
+          "value": 0.6,
+          "random": true,
+          "anim": {
+            "enable": true,
+            "speed": 1.2,
+            "opacity_min": 0.3,
+            "sync": false
+          }
+        },
+        "size": {
+          "value": 3,
+          "random": true,
+          "anim": {
+            "enable": true,
+            "speed": 2,
+            "size_min": 0.5,
+            "sync": false
+          }
+        },
+        "line_linked": { "enable": false },  /* No connecting lines */
+        "move": {
+          "enable": true,
+          "speed": 2,
+          "direction": "none",
+          "random": true,
+          "straight": false,
+          "out_mode": "out",
+          "bounce": false
+        }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": {
+          "onhover": { "enable": true, "mode": "repulse" },
+          "onclick": { "enable": true, "mode": "push" },
+          "resize": true
+        },
+        "modes": {
+          "repulse": { "distance": 100, "duration": 0.4 },
+          "push": { "particles_nb": 4 }
+        }
+      },
+      "retina_detect": true
+    });
+
+  </script>
+</body>
+
+</html>

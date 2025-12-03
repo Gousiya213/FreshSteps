@@ -9,7 +9,7 @@ It provides a clean, user‑friendly interface with interactive features to enga
 👉 [View the live project here](https://fresh-kgj5.onrender.com)
 
 ## APK Download
-👉 [Download the APK from Google Drive]( "C:\Users\Shaik Gousiya\Downloads\_FreshSteps_19315608.apk")
+👉 [Download the APK from Google Drive](https://drive.google.com/file/d/1w_P_VdYnmx9ltUDUazYOffZm-CRFJLEf/view?usp=sharing )
 
 ## Features
 - 🌍 Air pollution awareness and education
